@@ -1,0 +1,85 @@
+library(Seurat)
+library(BayesSpace)
+set.seed(100)
+data_dir <- '/home/yangyi/WAT/Data/HFD1/'
+data_dir2 <- '/home/yangyi/WAT/Data/WT2/'
+HFD1_sce <- readVisium(data_dir)
+WT1_sce <- readVisium(data_dir2)
+
+HFD1_sce <- spatialPreprocess(HFD1_sce, platform="Visium", n.PCs = 15, n.HVGs=20000)
+WT1_sce <- spatialPreprocess(WT1_sce, platform="Visium", n.PCs = 15, n.HVGs=20000)
+
+dec <- scran::modelGeneVar(HFD1_sce)
+top <- scran::getTopHVGs(dec, n = 20000)
+idx = match(top, rownames(HFD1_sce))
+data1 = logcounts(HFD1_sce)[idx,]
+
+dec <- scran::modelGeneVar(WT1_sce)
+top <- scran::getTopHVGs(dec, n = 20000)
+idx = match(top, rownames(WT1_sce))
+data2 = logcounts(WT1_sce)
+
+comm_name = intersect(rownames(data1), rownames(data2))
+idx1 = match(comm_name, rownames(data1))
+idx2 = match(comm_name, rownames(data2))
+
+data1_int = data1[idx1, ]
+data2_int = data2[idx2, ]
+
+data1_mat = t(as.matrix(data1_int))
+data2_mat = t(as.matrix(data2_int))
+
+HFD1_WT1_mat = rbind(data1_mat, data2_mat)
+HFD1_WT1_norm = scale(HFD1_WT1_mat)
+
+n1 = dim(data1_mat)[1]
+n2 = dim(data2_mat)[1]
+
+d = 15
+HFD1_pca =  reducedDim(HFD1_sce, "PCA")[, seq_len(d)]
+WT1_pca =  reducedDim(WT1_sce, "PCA")[, seq_len(d)] 
+
+HFD1_pca_zero = rbind(HFD1_pca, matrix(0, n2, 15))
+zero_WT1_pca = rbind(matrix(0, n1, 15), WT1_pca)
+HFD1_WT1_pca = cbind(HFD1_pca_zero, zero_WT1_pca)
+rownames(HFD1_WT1_pca) = c(paste0("HFD_", rownames(HFD1_pca)), paste0("WT_",rownames(WT1_pca)))
+
+HFD1_WT1_norm2 = HFD1_WT1_norm
+for (i in 1:dim(HFD1_WT1_norm)[2]){
+  fit = lm(HFD1_WT1_norm[,i]~HFD1_WT1_pca)
+  HFD1_WT1_norm2[,i] = fit$residuals
+}
+
+HFD1_spa_mat <- as.matrix(colData(HFD1_sce)[, c("row", "col")])
+WT1_spa_mat <- as.matrix(colData(WT1_sce)[, c("row", "col")])
+
+library(spaco)
+theta = matrix(1, 3, 1)
+ones = matrix(1, n1+n2, 1)
+
+
+all(rownames(HFD1_spa_mat) == rownames(HFD1_WT1_norm2[1:n1,]))
+all(rownames(WT1_spa_mat) == rownames(HFD1_WT1_norm2[(n1+1):(n1+n2),]))
+
+
+setwd("/home/yangyi/WAT")
+HFD1_mean = apply(HFD1_WT1_norm2[1:n1,], 2, mean)
+WT1_mean = apply(HFD1_WT1_norm2[(n1+1):(n1+n2),], 2, mean)
+write.table(HFD1_mean, file = "HFD1_WT2_BS_normalization_data1_mean.txt", col.names = F, row.names = F, quote = F)
+write.table(WT1_mean, file = "HFD1_WT2_BS_normalization_data2_mean.txt", col.names = F, row.names = F, quote = F)
+
+
+tic = proc.time()
+out = Var_equal_spa_all_paral_LRT_test(HFD1_spa_mat, WT1_spa_mat, ones, HFD1_WT1_norm2, theta, num_ls = 20,  iteration = 9999, Kernel_fixd = FALSE, verbose = FALSE, coreNum = 20)
+toc = proc.time()
+time = toc - tic
+
+
+setwd("/home/yangyi/WAT")
+saveRDS(out, file = "HFD1_WT2_Var_equal_spa_BS_normalzation.rds")
+saveRDS(time, file = "HFD1_WT2_Var_equal_spa_time_BS_normalization.rds")
+saveRDS(colnames(HFD1_WT1_norm2), file = "HFD1_WT2_Var_equal_spa_geneID_BS_normalization.rds")
+
+
+
+

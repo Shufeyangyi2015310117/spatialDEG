@@ -1,0 +1,19 @@
+{
+    "args": [
+        "-I/Library/Developer/CommandLineTools/usr/lib/clang/10.0.0/include",
+        "-I/usr/local/clang4/bin/../include/c++/v1",
+        "-I/usr/local/include",
+        "-I/usr/local/clang4/bin/../lib/clang/4.0.0/include",
+        "-I/usr/include",
+        "-I/Library/Frameworks/R.framework/Versions/4.0/Resources/library/Rcpp/include",
+        "-I/Library/Frameworks/R.framework/Versions/4.0/Resources/library/RcppArmadillo/include",
+        "-std=gnu++11",
+        "-I/Library/Frameworks/R.framework/Resources/include",
+        "-DNDEBUG",
+        "-I/usr/local/include",
+        "-fPIC"
+    ],
+    "pch": "RcppArmadillo",
+    "is_cpp": true,
+    "hash": "1581952355165019830816501983081650198308"
+}
