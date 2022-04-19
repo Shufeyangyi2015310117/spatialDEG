@@ -14,13 +14,7 @@ struct Obj_Single_gene_test{
 };
 
 
-//' Do inverse of sysmetric matrix 
-//' @param Min A sysmetric matrix
-//' 
-//' @return A list
-//' 
-//' @export
-// [[Rcpp::export]]
+
 arma::mat SysMatEigen3(arma::mat M) {
 		arma::vec eigval = zeros<vec>( M.n_rows );
 		arma::mat eigvec = zeros<mat>( size(M) );

@@ -11,17 +11,6 @@ Rcpp::Rostream<true>&  Rcpp::Rcout = Rcpp::Rcpp_cout_get();
 Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
 #endif
 
-// SysMatEigen3
-arma::mat SysMatEigen3(arma::mat M);
-RcppExport SEXP _spatialDEG_SysMatEigen3(SEXP MSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< arma::mat >::type M(MSEXP);
-    rcpp_result_gen = Rcpp::wrap(SysMatEigen3(M));
-    return rcpp_result_gen;
-END_RCPP
-}
 // SysMatEigen2
 List SysMatEigen2(arma::mat M);
 RcppExport SEXP _spatialDEG_SysMatEigen2(SEXP MSEXP) {
@@ -74,8 +63,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // spatialDEG_test
-List spatialDEG_test(arma::mat& spa1, arma::mat& spa2, arma::mat& W, arma::mat& Y, arma::vec& Initial_theta, bool mu_fixed, bool verbose);
-RcppExport SEXP _spatialDEG_spatialDEG_test(SEXP spa1SEXP, SEXP spa2SEXP, SEXP WSEXP, SEXP YSEXP, SEXP Initial_thetaSEXP, SEXP mu_fixedSEXP, SEXP verboseSEXP) {
+List spatialDEG_test(arma::mat& spa1, arma::mat& spa2, arma::mat& W, arma::mat& Y, arma::vec& Initial_theta, int num_ls, bool mu_fixed, bool verbose);
+RcppExport SEXP _spatialDEG_spatialDEG_test(SEXP spa1SEXP, SEXP spa2SEXP, SEXP WSEXP, SEXP YSEXP, SEXP Initial_thetaSEXP, SEXP num_lsSEXP, SEXP mu_fixedSEXP, SEXP verboseSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -84,19 +73,19 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< arma::mat& >::type W(WSEXP);
     Rcpp::traits::input_parameter< arma::mat& >::type Y(YSEXP);
     Rcpp::traits::input_parameter< arma::vec& >::type Initial_theta(Initial_thetaSEXP);
+    Rcpp::traits::input_parameter< int >::type num_ls(num_lsSEXP);
     Rcpp::traits::input_parameter< bool >::type mu_fixed(mu_fixedSEXP);
     Rcpp::traits::input_parameter< bool >::type verbose(verboseSEXP);
-    rcpp_result_gen = Rcpp::wrap(spatialDEG_test(spa1, spa2, W, Y, Initial_theta, mu_fixed, verbose));
+    rcpp_result_gen = Rcpp::wrap(spatialDEG_test(spa1, spa2, W, Y, Initial_theta, num_ls, mu_fixed, verbose));
     return rcpp_result_gen;
 END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
-    {"_spatialDEG_SysMatEigen3", (DL_FUNC) &_spatialDEG_SysMatEigen3, 1},
     {"_spatialDEG_SysMatEigen2", (DL_FUNC) &_spatialDEG_SysMatEigen2, 1},
     {"_spatialDEG_spatialDEG_true_kernel_test", (DL_FUNC) &_spatialDEG_spatialDEG_true_kernel_test, 8},
     {"_spatialDEG_spatialDEG_paral_test", (DL_FUNC) &_spatialDEG_spatialDEG_paral_test, 12},
-    {"_spatialDEG_spatialDEG_test", (DL_FUNC) &_spatialDEG_spatialDEG_test, 7},
+    {"_spatialDEG_spatialDEG_test", (DL_FUNC) &_spatialDEG_spatialDEG_test, 8},
     {NULL, NULL, 0}
 };
 

@@ -9,233 +9,6 @@ using namespace arma;
 using namespace Rcpp;
 
 
-//call pnorm from stats package
-double get_pval(double test_stat){
-    double neg_test_stat = -std::abs(test_stat);
-
-    // get namespace of package
-    Rcpp::Environment pkg = Environment::namespace_env("stats");
-    // get function from package
-    Rcpp::Function f = pkg["pnorm"];
-        
-    double pval = 2.0*Rcpp::as<double>( f(_["q"]=neg_test_stat) );
-    return pval; 
-}
-
-// mean center the columns
-void center_Y( mat& Y, int N, int n_phe ) {
-    for (int j=0; j<n_phe; j++) {
-        double mean_val = mean( Y.col(j) );
-        for (int i=0; i<N; i++) {
-            Y(i,j) = Y(i,j) - mean_val;
-        }
-    }
-}
-
-
-// get the length-scale/periodicity parameter
-void get_kscale_vec( mat& spa, vec& kscale_vec, mat& sqdist ) {
-    int N=spa.n_rows; 
-    int n_pair = N*(N-1)/2;
-    vec pair_dist(n_pair, fill::zeros); 
-    int counter=0;
-    double m1=0, m2=0; 
-
-    for (int i=0; i<N-1; i++) {
-        for (int j=i+1; j<N; j++) {
-            sqdist(i,j) = pow( spa(i,0)-spa(j,0), 2 ) + pow( spa(i,1)-spa(j,1), 2 );
-            //dist(i,j) = sqrt( sqdist(i,j) );
-
-            pair_dist(counter) = sqrt( sqdist(i,j) );
-            counter++; 
-        }
-    }
-    
-    vec p = {0, 1}; 
-    vec mvec = quantile(pair_dist, p);
-    m1 = mvec(0);
-    m2 = mvec(1);
-    //m1 = min( pair_dist );
-    //m2 = max( pair_dist );
-    Rprintf("m1 %f m2 %f \n", m1, m2);
-    
-    double lm1 = log10(m1); //m1 = min( pair_dist ); lm1=log10(0.5*m1)
-    double lm2 = log10(m2); //m2 = max( pair_dist ); lm2=log10(2.0*m2)
-    double ldiff = lm2 - lm1; 
-    double diff = m2 - m1;
-    double temp = 0.0;
-    for (int i=0; i<40; i++) {
-        //temp = lm1 + i/9.0*ldiff; 
-        //kscale_vec(i) = pow(10.0, temp);
-        kscale_vec(i) = m1 + i/39.0*diff;
-    }
-
-}
-
-
-
-// get the length-scale/periodicity parameter
-void get_kscale_vec2( mat& spa, vec& kscale_vec, mat& sqdist ) {
-    int N=spa.n_rows; 
-    int n_pair = N*(N-1)/2;
-    vec pair_dist(n_pair, fill::zeros); 
-    int counter=0;
-    double m1=0, m2=0; 
-
-    for (int i=0; i<N-1; i++) {
-        for (int j=i+1; j<N; j++) {
-            sqdist(i,j) = pow( spa(i,0)-spa(j,0), 2 ) + pow( spa(i,1)-spa(j,1), 2 );
-            //dist(i,j) = sqrt( sqdist(i,j) );
-
-            pair_dist(counter) = sqrt( sqdist(i,j) );
-            counter++; 
-        }
-    }
-    
-    vec p = {0, 1}; 
-    vec mvec = quantile(pair_dist, p);
-    m1 = mvec(0);
-    m2 = mvec(1);
-    //m1 = min( pair_dist );
-    //m2 = max( pair_dist );
-    Rprintf("m1 %f m2 %f \n", m1, m2);
-    
-    double lm1 = log10(m1); //m1 = min( pair_dist ); lm1=log10(0.5*m1)
-    double lm2 = log10(m2); //m2 = max( pair_dist ); lm2=log10(2.0*m2)
-    double ldiff = lm2 - lm1; 
-    double diff = m2 - m1;
-    double temp = 0.0;
-    for (int i=0; i<10; i++) {
-        //temp = lm1 + i/9.0*ldiff; 
-        //kscale_vec(i) = pow(10.0, temp);
-        kscale_vec(i) = m1 + i/9.0*diff;
-    }
-
-}
-
-
-
-// get the length-scale/periodicity parameter
-void get_kscale_vec3( mat& spa, vec& kscale_vec, mat& sqdist, int num_ls) {
-    int N=spa.n_rows; 
-    int n_pair = N*(N-1)/2;
-    vec pair_dist(n_pair, fill::zeros); 
-    int counter=0;
-    double m1=0, m2=0; 
-
-    for (int i=0; i<N-1; i++) {
-        for (int j=i+1; j<N; j++) {
-            sqdist(i,j) = pow( spa(i,0)-spa(j,0), 2 ) + pow( spa(i,1)-spa(j,1), 2 );
-            //dist(i,j) = sqrt( sqdist(i,j) );
-
-            pair_dist(counter) = sqrt( sqdist(i,j) );
-            counter++; 
-        }
-    }
-    
-    vec p = {0, 1}; 
-    vec mvec = quantile(pair_dist, p);
-    m1 = mvec(0);
-    m2 = mvec(1);
-    //m1 = min( pair_dist );
-    //m2 = max( pair_dist );
-    Rprintf("m1 %f m2 %f \n", m1, m2);
-    
-    double lm1 = log10(m1); //m1 = min( pair_dist ); lm1=log10(0.5*m1)
-    double lm2 = log10(m2); //m2 = max( pair_dist ); lm2=log10(2.0*m2)
-    double ldiff = lm2 - lm1; 
-    double diff = m2 - m1;
-    double temp = 0.0;
-    for (int i=0; i< num_ls; i++) {
-        //temp = lm1 + i/9.0*ldiff; 
-        //kscale_vec(i) = pow(10.0, temp);
-        kscale_vec(i) = m1 + i/((double)num_ls - 1.0)*diff;
-    }
-
-}
-
-
-
-// get the length-scale/periodicity parameter
-void get_kscale_vec4( mat& spa, vec& kscale_vec, mat& sqdist, int num_ls) {
-    int N=spa.n_rows; 
-    int n_pair = N*(N-1)/2;
-    vec pair_dist(n_pair, fill::zeros); 
-    int counter=0;
-    double m1=0, m2=0; 
-
-    for (int i=0; i<N-1; i++) {
-        for (int j=i+1; j<N; j++) {
-            sqdist(i,j) = pow( spa(i,0)-spa(j,0), 2 ) + pow( spa(i,1)-spa(j,1), 2 );
-            //dist(i,j) = sqrt( sqdist(i,j) );
-
-            pair_dist(counter) = sqrt( sqdist(i,j) );
-            counter++; 
-        }
-    }
-    
-    vec p = {0, 1}; 
-    vec mvec = quantile(pair_dist, p);
-    m1 = mvec(0);
-    m2 = mvec(1)*2;
-    //m1 = min( pair_dist );
-    //m2 = max( pair_dist );
-    Rprintf("m1 %f m2 %f \n", m1, m2);
-    
-    double lm1 = log10(m1); //m1 = min( pair_dist ); lm1=log10(0.5*m1)
-    double lm2 = log10(m2); //m2 = max( pair_dist ); lm2=log10(2.0*m2)
-    double ldiff = lm2 - lm1; 
-    double diff = m2 - m1;
-    double temp = 0.0;
-    for (int i=0; i< num_ls; i++) {
-        temp = lm1 + i/((double)num_ls - 1.0)*ldiff; 
-        kscale_vec(i) = pow(10.0, temp);
-        //kscale_vec(i) = m1 + i/((double)num_ls - 1.0)*diff;
-    }
-
-}
-
-
-
-// get the length-scale/periodicity parameter
-void get_kscale_vec5( mat& spa, vec& kscale_vec, mat& sqdist, int num_ls) {
-    int N=spa.n_rows; 
-    int n_pair = N*(N-1)/2;
-    vec pair_dist(n_pair, fill::zeros); 
-    int counter=0;
-    double m1=0, m2=0; 
-
-    for (int i=0; i<N-1; i++) {
-        for (int j=i+1; j<N; j++) {
-            sqdist(i,j) = pow( spa(i,0)-spa(j,0), 2 ) + pow( spa(i,1)-spa(j,1), 2 );
-            //dist(i,j) = sqrt( sqdist(i,j) );
-
-            pair_dist(counter) = sqrt( sqdist(i,j) );
-            counter++; 
-        }
-    }
-    
-    vec p = {0, 1}; 
-    vec mvec = quantile(pair_dist, p);
-    m1 = mvec(0);
-    m2 = mvec(1);
-    //m1 = min( pair_dist );
-    //m2 = max( pair_dist );
-    Rprintf("m1 %f m2 %f \n", m1, m2);
-    
-    double lm1 = log10(m1); //m1 = min( pair_dist ); lm1=log10(0.5*m1)
-    double lm2 = log10(m2); //m2 = max( pair_dist ); lm2=log10(2.0*m2)
-    double ldiff = lm2 - lm1; 
-    double diff = m2 - m1;
-    double temp = 0.0;
-    for (int i=0; i< num_ls; i++) {
-        //temp = lm1 + i/9.0*ldiff; 
-        //kscale_vec(i) = pow(10.0, temp);
-        kscale_vec(i) = m1 + i/((double)num_ls - 1.0)*diff;
-    }
-    kscale_vec(9) = 2000;
-}
-
 
 // get the length-scale/periodicity parameter
 void get_kscale_vec6( mat& spa, vec& kscale_vec, mat& sqdist, int num_ls) {
@@ -328,11 +101,17 @@ void get_cosine_kern2( mat& spa, double kscale, mat& sqdist, mat& K ) {
 
 
 
-//' Do inverse of sysmetric matrix 
-//' @param Min A sysmetric matrix
-//' 
-//' @return A list
-//' 
+//' @author Yi Yang
+//' @title
+//' SysMatEigen2
+//' @description
+//' SysMatEigen2 to transform the matrix to a positive definite matrix
+//' @param M  a matrix
+//' @return a List
+//'
+//'
+//' @details
+//' \code{spatialDEG_test} run spatialDEG model.
 //' @export
 // [[Rcpp::export]]
 List SysMatEigen2(arma::mat M) {
@@ -358,12 +137,31 @@ try {
 		::Rf_error("C++ exception (unknown reason)...");
 	}
 	return R_NilValue;
-}// end func
+}
 
 
 
 
-
+//' @author Yi Yang
+//' @title
+//' spatialDEG
+//' @description
+//' spatialDEG to perform differentially expressed gene analysis by leveraging spatial information with true kernels.
+//' @param W  covariates for the two datasets
+//' @param Y  stacked gene expression
+//' @param K1  kernel for the first dataset.
+//' @param K2  kernel for the second dataset.
+//' @param Initial_theta  initial value of theta
+//' @param mu_fixed logical value specifying whether mu is fixed
+//' @param verbose logical value specifying whether to print the parameters during the spatialDEG analysis or not
+//' @param check_positive a logical value specifying whether to check the positive definiteness of kernels
+//'
+//' @return List of model parameters
+//'
+//'
+//' @details
+//' \code{spatialDEG_test} run spatialDEG model.
+//' @export
 // [[Rcpp::export]]
 List spatialDEG_true_kernel_test(arma::mat& W, arma::mat& Y, arma::mat& K1, arma::mat& K2, arma::vec& Initial_theta, bool mu_fixed = true, bool verbose = true, bool check_positive = false) {
   // input: gene expression Y = [y1 y2 ... y_nphe] at N pixels
@@ -547,11 +345,11 @@ List spatialDEG_true_kernel_test(arma::mat& W, arma::mat& Y, arma::mat& K1, arma
         sigma(0,0) = theta(1);
         sigma(1,0) = theta(2);
           
-        cout << "iteration is " << iter << endl;
-        cout << "theta is " << theta.t() << endl;
         diff = norm(theta - theta_old);
         theta_old = theta;
-        cout <<  "diff is " << diff << endl;
+        if (verbose){
+            cout <<  "diff is " << diff << endl;
+        }    
         iter++;
     
       }
@@ -588,20 +386,20 @@ List spatialDEG_true_kernel_test(arma::mat& W, arma::mat& Y, arma::mat& K1, arma
 
 //' @author Yi Yang
 //' @title
-//' spatialDEG
+//' spatialDEG_paral_test
 //' @description
-//' spatialDEG to perform differentially expressed gene analysis by leveraging spatial information.
+//' spatialDEG to perform differentially expressed gene analysis by leveraging spatial information in parallel.
 //'
 //' @param spa1  spatial location for the first dataset.
 //' @param spa2  spatial location for the second dataset.
-//' @param W  gene expression file with full name.
-//' @param Y  covariates file for eQTL data.
-//' @param Initial_theta  covariates file for GWAS data, e.g. top 10 PCs.
-//' @param num_ls number of length scale and periodeirtor
-//' @param interation The maximum iteration
-//' @param Kernel_fixed logical value specifying the 
-//' @param verbose logical value specifying the 
-//' @param kernel_matched logical value specifying the 
+//' @param W  covariates for the two datasets
+//' @param Y  stacked gene expression
+//' @param Initial_theta  initial value of theta
+//' @param num_ls total number of length scale and periodicity
+//' @param iteration The maximum iteration
+//' @param Kernel_fixd a logical value specifying whether the kernel is fixed
+//' @param verbose a logical value specifying whether to print the parameters during the spatialDEG analysis or not
+//' @param kernel_matched a logical value specifying whether the the kernels under both null hypothesis and alternative hypothesis are restricted to be the same type of kernel
 //' @param coreNum Number of cores used for parallel computation
 //' @param tol tolence to stop the algorithm
 //'
@@ -758,8 +556,33 @@ List spatialDEG_paral_test(arma::mat& spa1, arma::mat& spa2, arma::mat& W, arma:
 
 
 
+
+
+
+
+//' @author Yi Yang
+//' @title
+//' spatialDEG
+//' @description
+//' spatialDEG to perform differentially expressed gene analysis by leveraging spatial information.
+//'
+//' @param spa1  spatial location for the first dataset.
+//' @param spa2  spatial location for the second dataset.
+//' @param W  covariates for the two datasets
+//' @param Y  stacked gene expression
+//' @param Initial_theta  initial value of theta
+//' @param num_ls total number of length scale and periodicity
+//' @param mu_fixed logical value specifying whether mu is fixed
+//' @param verbose logical value specifying whether to print the parameters during the spatialDEG analysis or not
+//'
+//' @return List of model parameters
+//'
+//'
+//' @details
+//' \code{spatialDEG_test} run spatialDEG model.
+//' @export
 // [[Rcpp::export]]
-List spatialDEG_test(arma::mat& spa1, arma::mat& spa2, arma::mat& W, arma::mat& Y, arma::vec& Initial_theta, bool mu_fixed = true, bool verbose = true) {
+List spatialDEG_test(arma::mat& spa1, arma::mat& spa2, arma::mat& W, arma::mat& Y, arma::vec& Initial_theta, int num_ls = 20, bool mu_fixed = true, bool verbose = true) {
   // input: gene expression Y = [y1 y2 ... y_nphe] at N pixels
   // spa is an N by 2 matrix containing the (x,y) coordinates of the N pixels
   // if number of pixels N is too large, do not store sqdist and dist -- recalculate dist for every length-scale parameter
@@ -776,13 +599,13 @@ List spatialDEG_test(arma::mat& spa1, arma::mat& spa2, arma::mat& W, arma::mat& 
   // define 
   mat sqdist1(n1,n1, fill::zeros), K1(n1,n1, fill::zeros); 
   mat sqdist2(n2,n2, fill::zeros), K2(n2,n2, fill::zeros);
-  vec kscale1_vec(10, fill::zeros); 
-  vec kscale2_vec(10, fill::zeros);  
+  vec kscale1_vec(num_ls, fill::zeros); 
+  vec kscale2_vec(num_ls, fill::zeros);  
 
     
   // calculate all the distances of pair cells i and j and and define 10 lengthscale
-  get_kscale_vec2(spa1, kscale1_vec, sqdist1);
-  get_kscale_vec2(spa2, kscale2_vec, sqdist2);
+  get_kscale_vec6(spa1, kscale1_vec, sqdist1, num_ls);
+  get_kscale_vec6(spa2, kscale2_vec, sqdist2, num_ls);
   cout << "The 10 lengthscale for the first dataset are " << kscale1_vec << endl;
   cout << "The 10 lengthscale for the second dataset are " << kscale2_vec << endl;
     
@@ -791,17 +614,17 @@ List spatialDEG_test(arma::mat& spa1, arma::mat& spa2, arma::mat& W, arma::mat& 
   double kscale2 = kscale2_vec(0);
     
   // define the matrix for storing all the eigen values, rows for cells and columns for kernels    
-  mat D1_all(n1, 20);
-  mat D2_all(n2, 20);
+  mat D1_all(n1, num_ls);
+  mat D2_all(n2, num_ls);
     
   // define cubes for storing the pseudo gene expression and covariates and matrix for storing the pseudo indicator
-  cube Ytilde_all(Ncell, ngene, 20, fill::zeros);
-  cube Wtilde_all(Ncell, p, 20, fill::zeros );
-  mat ztilde_all(Ncell, 20);
+  cube Ytilde_all(Ncell, ngene, num_ls, fill::zeros);
+  cube Wtilde_all(Ncell, p, num_ls, fill::zeros );
+  mat ztilde_all(Ncell, num_ls);
    
   // 
   cout << "Get the pseudo gene expression, covariates and indicators" << endl;
-    for (int k = 0; k < 10; k++){
+    for (int k = 0; k < num_ls/2; k++){
         
         kscale1 = kscale1_vec(k);
         kscale2 = kscale2_vec(k);
@@ -832,10 +655,10 @@ List spatialDEG_test(arma::mat& spa1, arma::mat& spa2, arma::mat& W, arma::mat& 
     
     
     
-    for (int k = 10; k < 20; k++){
+    for (int k = num_ls/2; k < num_ls; k++){
         
-        kscale1 = kscale1_vec(k-10);
-        kscale2 = kscale2_vec(k-10);
+        kscale1 = kscale1_vec(k);
+        kscale2 = kscale2_vec(k);
         
         get_cosine_kern(spa1, kscale1, sqdist1, K1); 
         get_cosine_kern(spa2, kscale2, sqdist2, K2); 
@@ -1013,9 +836,9 @@ List spatialDEG_test(arma::mat& spa1, arma::mat& spa2, arma::mat& W, arma::mat& 
         // update the hyperparameter lengthscale
 
         cout << "calculate the loglikelihood for the first dataset and second dataset respectively, on a sequence of 10 candidate lengthscale" << endl;
-        loglik1_all = zeros(20, 1);
-        loglik2_all = zeros(20, 1);
-        for (int k1 = 0; k1 < kscale1_vec.n_elem*2; k1++){ 
+        loglik1_all = zeros(num_ls, 1);
+        loglik2_all = zeros(num_ls, 1);
+        for (int k1 = 0; k1 < kscale1_vec.n_elem; k1++){ 
             Omega_11 = theta(1)*D1_all.col(k1) + theta(0)*I1;  // N-by-1 vector   
             Omega_22 = theta(2)*D2_all.col(k1) + theta(0)*I2;  // N-by-1 vector
             H_11 = 1.0/Omega_11;  
@@ -1058,11 +881,11 @@ List spatialDEG_test(arma::mat& spa1, arma::mat& spa2, arma::mat& W, arma::mat& 
           }
           
 
-        cout << "iteration is " << iter << endl;
-        cout << "theta is " << theta.t() << endl;
         diff = norm(theta - theta_old);
         theta_old = theta;
-        cout <<  "diff is " << diff << endl;
+        if (verbose){
+            cout <<  "diff is " << diff << endl;
+        }
         iter++;
       }
       
@@ -1073,16 +896,8 @@ List spatialDEG_test(arma::mat& spa1, arma::mat& spa2, arma::mat& W, arma::mat& 
         output(count, 2) = theta(1);
         output(count, 3) = theta(2);
         output(count, 4) = mu;
-        if (idx1 < 10){
-            output(count, 5) = kscale1_vec(idx1); 
-        }else{
-            output(count, 5) = kscale1_vec(idx1-10); 
-        }
-        if (idx2 < 10){
-            output(count, 6) = kscale2_vec(idx2); 
-        }else{
-            output(count, 6) = kscale2_vec(idx2-10); 
-        }
+        output(count, 5) = kscale1_vec(idx1);
+        output(count, 6) = kscale2_vec(idx2); 
         output(count, 7) = idx1;
         output(count, 8) = idx2;  
         beta_all.col(count) = beta;        
@@ -1097,6 +912,8 @@ List spatialDEG_test(arma::mat& spa1, arma::mat& spa2, arma::mat& W, arma::mat& 
     
   ret["output"] = output;
   ret["beta"] = beta_all;
+  ret["kscale1"] = kscale1_vec;
+  ret["kscale2"] = kscale2_vec;
 
   // construct return object
   
